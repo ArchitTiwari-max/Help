@@ -322,10 +322,20 @@
         <span class="label">दर्द</span>
         <span class="sublabel">दर्द हो रहा है</span>
       </button>
+      <button class="big-btn btn-purple" onclick="speak('मुझे बाथरूम जाना है', this)">
+        <span class="emoji">🚽</span>
+        <span class="label">बाथरूम</span>
+        <span class="sublabel">बाथरूम जाना है</span>
+      </button>
       <button class="big-btn btn-rest" onclick="speak('मुझे आराम करना है', this)">
         <span class="emoji">🛏️</span>
         <span class="label">आराम</span>
         <span class="sublabel">आराम करना है</span>
+      </button>
+      <button class="big-btn btn-teal" onclick="speak('मुझे दवाई चाहिए', this)">
+        <span class="emoji">💊</span>
+        <span class="label">दवाई</span>
+        <span class="sublabel">दवाई चाहिए</span>
       </button>
     </div>
 
@@ -386,6 +396,19 @@
       <span class="emoji">🤔</span>
       <span class="label">मुझे समझ नहीं आया</span>
     </button>
+
+    <div class="btn-grid">
+      <button class="big-btn btn-teal" onclick="speak('मैं सब समझ रहा हूँ, मुझे मत बताओ', this)">
+        <span class="emoji">✋</span>
+        <span class="label">सब समझ रहा हूँ</span>
+        <span class="sublabel">मुझे मत बताओ</span>
+      </button>
+      <button class="big-btn btn-no" onclick="speak('मेरा दिमाग मत खराब करो', this)">
+        <span class="emoji">💢</span>
+        <span class="label">दिमाग मत खराब करो</span>
+        <span class="sublabel">परेशान मत करो</span>
+      </button>
+    </div>
 
     <!-- Emergency -->
     <div class="emerg-strip" onclick="speak('मुझे मदद चाहिए, कृपया जल्दी आएं', this)" role="button" tabindex="0">
@@ -465,16 +488,6 @@
   <div class="screen" id="screen-more">
     <div class="screen-question">और क्या चाहिए?</div>
     <div class="btn-grid">
-      <button class="big-btn btn-teal" onclick="speak('मुझे दवाई चाहिए', this)">
-        <span class="emoji">💊</span>
-        <span class="label">दवाई</span>
-        <span class="sublabel">दवाई चाहिए</span>
-      </button>
-      <button class="big-btn btn-purple" onclick="speak('मुझे बाथरूम जाना है', this)">
-        <span class="emoji">🚽</span>
-        <span class="label">बाथरूम</span>
-        <span class="sublabel">बाथरूम जाना है</span>
-      </button>
       <button class="big-btn btn-indigo" onclick="speak('मुझे ठंड लग रही है', this)">
         <span class="emoji">🧥</span>
         <span class="label">ठंड</span>
@@ -484,6 +497,11 @@
         <span class="emoji">🌡️</span>
         <span class="label">गर्मी</span>
         <span class="sublabel">गर्मी लग रही है</span>
+      </button>
+      <button class="big-btn btn-teal" onclick="goScreen('screen-feelings')">
+        <span class="emoji">💭</span>
+        <span class="label">भावनाएँ</span>
+        <span class="sublabel">कैसा महसूस है</span>
       </button>
     </div>
 
