@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>बात करें – Assistive Communication App</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700;900&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── Reset & Base ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0e0e14;
+      --surface:   #1a1a28;
+      --surface2:  #252538;
+      --border:    rgba(255,255,255,0.10);
+      --text:      #f0edf8;
+      --muted:     #9590b0;
+      --accent:    #7c6af5;
+      --accent-dk: #5a49d0;
+
+      /* Button palettes */
+      --water:    #2196f3;
+      --water-dk: #1565c0;
+      --food:     #ff9800;
+      --food-dk:  #e65100;
+      --pain:     #f44336;
+      --pain-dk:  #b71c1c;
+      --rest:     #4caf50;
+      --rest-dk:  #1b5e20;
+      --yes:      #26c06f;
+      --yes-dk:   #0d6e3c;
+      --no:       #ef5350;
+      --no-dk:    #b71c1c;
+      --emerg:    #ff1744;
+      --emerg-dk: #9b0000;
+
+      --radius: 20px;
+      --btn-h:  120px;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Noto Sans Devanagari', 'Arial', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    /* ─── App Shell ─── */
+    #app {
+      height: 100svh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ─── Header ─── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px 10px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .header-back {
+      width: 48px; height: 48px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 22px;
+      cursor: pointer;
+      transition: background .15s, transform .1s;
+      user-select: none;
+    }
+    .header-back:active { transform: scale(0.93); background: var(--border); }
+    .header-back.hidden { visibility: hidden; pointer-events: none; }
+
+    .app-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: .3px;
+    }
+
+    .repeat-btn {
+      width: 48px; height: 48px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--accent);
+      border-radius: 12px;
+      font-size: 22px;
+      cursor: pointer;
+      transition: background .15s, transform .1s;
+      user-select: none;
+    }
+    .repeat-btn:active { transform: scale(0.93); background: var(--accent-dk); }
+    .repeat-btn.disabled { background: var(--surface2); cursor: default; }
+
+    /* ─── Screens ─── */
+    .screen {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      gap: 14px;
+    }
+    .screen.active { display: flex; }
+
+    /* ─── Question / Screen Title ─── */
+    .screen-question {
+      text-align: center;
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--text);
+      padding: 14px 8px 6px;
+      line-height: 1.4;
+    }
+    .screen-sub {
+      text-align: center;
+      font-size: 15px;
+      color: var(--muted);
+      margin-top: -8px;
+      margin-bottom: 4px;
+    }
+
+    /* ─── Button Grid ─── */
+    .btn-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .btn-grid.single-col {
+      grid-template-columns: 1fr;
+    }
+
+    /* ─── Big Button ─── */
+    .big-btn {
+      min-height: var(--btn-h);
+      border: none;
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+      padding: 18px 12px;
+      transition: transform .12s, filter .12s;
+      position: relative;
+      overflow: hidden;
+    }
+    .big-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0);
+      transition: background .15s;
+      border-radius: inherit;
+    }
+    .big-btn:active { transform: scale(0.95); }
+    .big-btn:active::after { background: rgba(255,255,255,0.12); }
+
+    .big-btn .emoji { font-size: 42px; line-height: 1; }
+    .big-btn .label { font-size: 22px; font-weight: 700; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,.4); }
+    .big-btn .sublabel { font-size: 13px; color: rgba(255,255,255,0.75); font-weight: 500; text-align: center; line-height: 1.3; }
+
+    /* ─── Color variants ─── */
+    .btn-water  { background: linear-gradient(145deg, var(--water), var(--water-dk)); }
+    .btn-food   { background: linear-gradient(145deg, var(--food),  var(--food-dk)); }
+    .btn-pain   { background: linear-gradient(145deg, var(--pain),  var(--pain-dk)); }
+    .btn-rest   { background: linear-gradient(145deg, var(--rest),  var(--rest-dk)); }
+    .btn-yes    { background: linear-gradient(145deg, var(--yes),   var(--yes-dk)); }
+    .btn-no     { background: linear-gradient(145deg, var(--no),    var(--no-dk)); }
+    .btn-emerg  { background: linear-gradient(145deg, var(--emerg), var(--emerg-dk)); }
+    .btn-purple { background: linear-gradient(145deg, #7c6af5, #5a49d0); }
+    .btn-teal   { background: linear-gradient(145deg, #00bcd4, #00838f); }
+    .btn-amber  { background: linear-gradient(145deg, #ffb300, #e65100); }
+    .btn-indigo { background: linear-gradient(145deg, #5c6bc0, #283593); }
+    .btn-music  { background: linear-gradient(145deg, #e91e8c, #8e0051); }
+
+    /* Pain levels */
+    .btn-mild   { background: linear-gradient(145deg, #8bc34a, #33691e); }
+    .btn-medium { background: linear-gradient(145deg, #ff9800, #bf360c); }
+    .btn-severe { background: linear-gradient(145deg, #f44336, #7f0000); }
+
+    /* ─── Category Row ─── */
+    .cat-row {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      flex-shrink: 0;
+    }
+    .cat-chip {
+      flex-shrink: 0;
+      padding: 10px 18px;
+      border-radius: 50px;
+      border: 2px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 16px;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s, border-color .15s, transform .1s;
+      user-select: none;
+    }
+    .cat-chip:active { transform: scale(0.95); }
+    .cat-chip.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    /* ─── TTS Feedback Toast ─── */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(30,30,50,0.96);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(8px);
+      color: #fff;
+      font-size: 17px;
+      font-weight: 600;
+      padding: 14px 26px;
+      border-radius: 50px;
+      opacity: 0;
+      transition: opacity .3s, transform .3s;
+      pointer-events: none;
+      z-index: 999;
+      text-align: center;
+      max-width: 88vw;
+      font-family: 'Noto Sans Devanagari', sans-serif;
+    }
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ─── Speaking Pulse Ring ─── */
+    @keyframes pulse-ring {
+      0%   { box-shadow: 0 0 0 0px rgba(124,106,245,.6); }
+      100% { box-shadow: 0 0 0 18px rgba(124,106,245,0); }
+    }
+    .speaking { animation: pulse-ring 0.9s ease-out infinite; }
+
+    /* ─── Emergency strip ─── */
+    .emerg-strip {
+      min-height: 90px;
+      border-radius: var(--radius);
+      background: linear-gradient(145deg, var(--emerg), var(--emerg-dk));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      cursor: pointer;
+      user-select: none;
+      transition: transform .12s;
+      border: 2px solid rgba(255,255,255,.25);
+    }
+    .emerg-strip:active { transform: scale(0.96); }
+    .emerg-strip .emoji { font-size: 34px; }
+    .emerg-strip .label { font-size: 24px; font-weight: 900; color: #fff; letter-spacing: .5px; }
+
+    /* ─── Scrollbar hide ─── */
+    ::-webkit-scrollbar { display: none; }
+
+    /* ─── Responsive fine-tuning ─── */
+    @media (min-width: 480px) {
+      :root { --btn-h: 140px; }
+      .big-btn .emoji { font-size: 50px; }
+      .big-btn .label { font-size: 26px; }
+      .screen-question { font-size: 30px; }
+    }
+    @media (min-width: 700px) {
+      #app { max-width: 480px; margin: 0 auto; }
+      html { background: #07070d; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ═══ HEADER ═══ -->
+  <header class="header">
+    <div class="header-back hidden" id="backBtn" role="button" aria-label="पीछे जाएं" tabindex="0">◀</div>
+    <div class="app-title" id="headerTitle">बात करें 🗣️</div>
+    <div class="repeat-btn disabled" id="repeatBtn" role="button" aria-label="फिर से सुनें" tabindex="0" title="फिर से सुनें 🔁">🔁</div>
+  </header>
+
+  <!-- ═══════════════════════════════════
+       SCREEN 1 — HOME (CATEGORY PICKER)
+  ════════════════════════════════════════ -->
+  <div class="screen active" id="screen-home">
+    <div class="screen-question">आपको क्या चाहिए?</div>
+    <div class="screen-sub">एक विकल्प चुनें 👇</div>
+
+    <!-- Quick needs -->
+    <div class="btn-grid">
+      <button class="big-btn btn-water" onclick="speak('मुझे पानी चाहिए', this)">
+        <span class="emoji">💧</span>
+        <span class="label">पानी</span>
+        <span class="sublabel">पानी चाहिए</span>
+      </button>
+      <button class="big-btn btn-food" onclick="speak('मुझे खाना चाहिए', this)">
+        <span class="emoji">🍽️</span>
+        <span class="label">खाना</span>
+        <span class="sublabel">खाना चाहिए</span>
+      </button>
+      <button class="big-btn btn-pain" onclick="speak('मुझे दर्द हो रहा है', this)">
+        <span class="emoji">😖</span>
+        <span class="label">दर्द</span>
+        <span class="sublabel">दर्द हो रहा है</span>
+      </button>
+      <button class="big-btn btn-rest" onclick="speak('मुझे आराम करना है', this)">
+        <span class="emoji">🛏️</span>
+        <span class="label">आराम</span>
+        <span class="sublabel">आराम करना है</span>
+      </button>
+    </div>
+
+    <!-- Category nav buttons -->
+    <div class="btn-grid">
+      <button class="big-btn btn-purple" onclick="goScreen('screen-yesno')">
+        <span class="emoji">✋</span>
+        <span class="label">हाँ / नहीं</span>
+        <span class="sublabel">जवाब देना है</span>
+      </button>
+      <button class="big-btn btn-teal" onclick="goScreen('screen-feelings')">
+        <span class="emoji">💭</span>
+        <span class="label">भावनाएँ</span>
+        <span class="sublabel">कैसा महसूस है</span>
+      </button>
+      <button class="big-btn btn-amber" onclick="goScreen('screen-pain-level')">
+        <span class="emoji">🌡️</span>
+        <span class="label">दर्द का स्तर</span>
+        <span class="sublabel">कितना दर्द है</span>
+      </button>
+      <button class="big-btn btn-music" onclick="goScreen('screen-music')">
+        <span class="emoji">🎵</span>
+        <span class="label">गाना</span>
+        <span class="sublabel">गाना सुनना है</span>
+      </button>
+    </div>
+
+    <!-- More row -->
+    <button class="big-btn btn-indigo" onclick="goScreen('screen-more')">
+      <span class="emoji">➕</span>
+      <span class="label">और जरूरतें</span>
+      <span class="sublabel">अन्य विकल्प देखें</span>
+    </button>
+
+    <!-- Emergency -->
+    <div class="emerg-strip" onclick="speak('मुझे मदद चाहिए, कृपया जल्दी आएं', this)" role="button" tabindex="0">
+      <span class="emoji">🚨</span>
+      <span class="label">आपातकालीन – मदद चाहिए!</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       SCREEN 2 — YES / NO
+  ════════════════════════════════════════ -->
+  <div class="screen" id="screen-yesno">
+    <div class="screen-question">हाँ या नहीं?</div>
+    <div class="btn-grid">
+      <button class="big-btn btn-yes" onclick="speak('हाँ', this)">
+        <span class="emoji">✔️</span>
+        <span class="label">हाँ</span>
+      </button>
+      <button class="big-btn btn-no" onclick="speak('नहीं', this)">
+        <span class="emoji">✖️</span>
+        <span class="label">नहीं</span>
+      </button>
+    </div>
+    <button class="big-btn btn-purple" onclick="speak('मुझे समझ नहीं आया', this)">
+      <span class="emoji">🤔</span>
+      <span class="label">मुझे समझ नहीं आया</span>
+    </button>
+
+    <!-- Emergency -->
+    <div class="emerg-strip" onclick="speak('मुझे मदद चाहिए, कृपया जल्दी आएं', this)" role="button" tabindex="0">
+      <span class="emoji">🚨</span>
+      <span class="label">मदद चाहिए</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       SCREEN 3 — FEELINGS
+  ════════════════════════════════════════ -->
+  <div class="screen" id="screen-feelings">
+    <div class="screen-question">आप कैसा महसूस कर रहे हैं?</div>
+    <div class="btn-grid">
+      <button class="big-btn btn-yes" onclick="speak('मैं ठीक हूँ', this)">
+        <span class="emoji">😊</span>
+        <span class="label">ठीक हूँ</span>
+      </button>
+      <button class="big-btn btn-pain" onclick="speak('मैं ठीक नहीं हूँ', this)">
+        <span class="emoji">😔</span>
+        <span class="label">ठीक नहीं</span>
+      </button>
+      <button class="big-btn btn-amber" onclick="speak('मुझे डर लग रहा है', this)">
+        <span class="emoji">😨</span>
+        <span class="label">डर लग रहा है</span>
+      </button>
+      <button class="big-btn btn-teal" onclick="speak('मुझे थकान हो रही है', this)">
+        <span class="emoji">😴</span>
+        <span class="label">थकान है</span>
+      </button>
+    </div>
+    <button class="big-btn btn-purple" onclick="speak('मुझे किसी से बात करनी है', this)">
+      <span class="emoji">💬</span>
+      <span class="label">बात करनी है</span>
+    </button>
+
+    <!-- Emergency -->
+    <div class="emerg-strip" onclick="speak('मुझे मदद चाहिए, कृपया जल्दी आएं', this)" role="button" tabindex="0">
+      <span class="emoji">🚨</span>
+      <span class="label">मदद चाहिए</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       SCREEN 4 — PAIN LEVEL
+  ════════════════════════════════════════ -->
+  <div class="screen" id="screen-pain-level">
+    <div class="screen-question">दर्द का स्तर क्या है?</div>
+    <div class="btn-grid single-col">
+      <button class="big-btn btn-mild" onclick="speak('मुझे हल्का दर्द हो रहा है', this)">
+        <span class="emoji">😐</span>
+        <span class="label">हल्का दर्द</span>
+        <span class="sublabel">थोड़ा दर्द है</span>
+      </button>
+      <button class="big-btn btn-medium" onclick="speak('मुझे मध्यम दर्द हो रहा है', this)">
+        <span class="emoji">😟</span>
+        <span class="label">मध्यम दर्द</span>
+        <span class="sublabel">काफी दर्द है</span>
+      </button>
+      <button class="big-btn btn-severe" onclick="speak('मुझे बहुत तेज़ दर्द हो रहा है, कृपया मदद करें', this)">
+        <span class="emoji">😫</span>
+        <span class="label">तेज़ दर्द</span>
+        <span class="sublabel">बहुत ज़ादा दर्द है</span>
+      </button>
+    </div>
+
+    <!-- Emergency -->
+    <div class="emerg-strip" onclick="speak('मुझे मदद चाहिए, कृपया जल्दी आएं', this)" role="button" tabindex="0">
+      <span class="emoji">🚨</span>
+      <span class="label">मदद चाहिए</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       SCREEN 5 — MORE NEEDS
+  ════════════════════════════════════════ -->
+  <div class="screen" id="screen-more">
+    <div class="screen-question">और क्या चाहिए?</div>
+    <div class="btn-grid">
+      <button class="big-btn btn-teal" onclick="speak('मुझे दवाई चाहिए', this)">
+        <span class="emoji">💊</span>
+        <span class="label">दवाई</span>
+        <span class="sublabel">दवाई चाहिए</span>
+      </button>
+      <button class="big-btn btn-purple" onclick="speak('मुझे बाथरूम जाना है', this)">
+        <span class="emoji">🚽</span>
+        <span class="label">बाथरूम</span>
+        <span class="sublabel">बाथरूम जाना है</span>
+      </button>
+      <button class="big-btn btn-indigo" onclick="speak('मुझे ठंड लग रही है', this)">
+        <span class="emoji">🧥</span>
+        <span class="label">ठंड</span>
+        <span class="sublabel">ठंड लग रही है</span>
+      </button>
+      <button class="big-btn btn-amber" onclick="speak('मुझे गर्मी लग रही है', this)">
+        <span class="emoji">🌡️</span>
+        <span class="label">गर्मी</span>
+        <span class="sublabel">गर्मी लग रही है</span>
+      </button>
+    </div>
+
+    <div class="btn-grid">
+      <button class="big-btn btn-music" onclick="speak('मेरी मालिश कर दीजिए', this)">
+        <span class="emoji">💆</span>
+        <span class="label">मालिश करदो</span>
+        <span class="sublabel">मालिश चाहिए</span>
+      </button>
+      <button class="big-btn btn-rest" onclick="speak('कृपया किसी को बुला दीजिए', this)">
+        <span class="emoji">🙏</span>
+        <span class="label">किसी को बुलाएं</span>
+      </button>
+    </div>
+
+    <!-- Emergency -->
+    <div class="emerg-strip" onclick="speak('मुझे मदद चाहिए, कृपया जल्दी आएं', this)" role="button" tabindex="0">
+      <span class="emoji">🚨</span>
+      <span class="label">मदद चाहिए</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       SCREEN 6 — MUSIC / गाना
+  ════════════════════════════════════════ -->
+  <div class="screen" id="screen-music">
+    <div class="screen-question">🎵 गाना / मनोरंजन</div>
+    <div class="screen-sub">क्या सुनना है?</div>
+
+    <div class="btn-grid">
+      <button class="big-btn btn-music" onclick="speak('मुझे गाना सुनना है', this)">
+        <span class="emoji">🎶</span>
+        <span class="label">गाना सुनना है</span>
+        <span class="sublabel">संगीत चालू करें</span>
+      </button>
+      <button class="big-btn btn-no" onclick="speak('गाना बंद करो', this)">
+        <span class="emoji">🔇</span>
+        <span class="label">गाना बंद करो</span>
+        <span class="sublabel">संगीत रोकें</span>
+      </button>
+      <button class="big-btn btn-indigo" onclick="speak('मुझे भजन सुनना है', this)">
+        <span class="emoji">🙏</span>
+        <span class="label">भजन</span>
+        <span class="sublabel">भक्ति संगीत</span>
+      </button>
+      <button class="big-btn btn-teal" onclick="speak('मुझे पुराने गाने सुनने हैं', this)">
+        <span class="emoji">📻</span>
+        <span class="label">पुराने गाने</span>
+        <span class="sublabel">पुराना संगीत</span>
+      </button>
+    </div>
+
+    <div class="btn-grid">
+      <button class="big-btn btn-amber" onclick="speak('आवाज़ थोड़ी कम करो', this)">
+        <span class="emoji">🔉</span>
+        <span class="label">आवाज़ कम करो</span>
+        <span class="sublabel">वॉल्यूम घटाएं</span>
+      </button>
+      <button class="big-btn btn-rest" onclick="speak('आवाज़ थोड़ी बढ़ाओ', this)">
+        <span class="emoji">🔊</span>
+        <span class="label">आवाज़ बढ़ाओ</span>
+        <span class="sublabel">वॉल्यूम बढ़ाएं</span>
+      </button>
+    </div>
+
+    <button class="big-btn btn-purple" onclick="speak('मुझे टीवी देखना है', this)">
+      <span class="emoji">📺</span>
+      <span class="label">टीवी देखना है</span>
+    </button>
+
+    <!-- Emergency -->
+    <div class="emerg-strip" onclick="speak('मुझे मदद चाहिए, कृपया जल्दी आएं', this)" role="button" tabindex="0">
+      <span class="emoji">🚨</span>
+      <span class="label">मदद चाहिए</span>
+    </div>
+  </div>
+
+</div><!-- #app -->
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+  /* ── TTS State ── */
+  let lastText = '';
+  let toastTimer = null;
+  let speaking = false;
+
+  /* ── Screen Navigation ── */
+  const screenTitles = {
+    'screen-home':       'बात करें 🗣️',
+    'screen-yesno':      'हाँ / नहीं',
+    'screen-feelings':   'भावनाएँ',
+    'screen-pain-level': 'दर्द का स्तर',
+    'screen-more':       'अन्य जरूरतें',
+    'screen-music':      '🎵 गाना / मनोरंजन',
+  };
+
+  function goScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+
+    const isHome = id === 'screen-home';
+    const backBtn = document.getElementById('backBtn');
+    backBtn.classList.toggle('hidden', isHome);
+    document.getElementById('headerTitle').textContent = screenTitles[id] || 'बात करें';
+  }
+
+  document.getElementById('backBtn').addEventListener('click', () => goScreen('screen-home'));
+  document.getElementById('backBtn').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') goScreen('screen-home'); });
+
+  /* ── TTS ── */
+  function speak(text, triggerEl) {
+    if (!window.speechSynthesis) {
+      showToast('⚠️ आवाज़ उपलब्ध नहीं है');
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    lastText = text;
+
+    // Enable repeat button
+    const repeatBtn = document.getElementById('repeatBtn');
+    repeatBtn.classList.remove('disabled');
+
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'hi-IN';
+    utter.rate = 0.75;   // slow & clear
+    utter.pitch = 1.05;
+    utter.volume = 1;
+
+    // Try to find a hi-IN voice
+    const voices = window.speechSynthesis.getVoices();
+    const hiVoice = voices.find(v =>
+      v.lang === 'hi-IN' || v.lang.startsWith('hi')
+    );
+    if (hiVoice) utter.voice = hiVoice;
+
+    if (triggerEl) {
+      triggerEl.classList.add('speaking');
+      utter.onend = () => { triggerEl.classList.remove('speaking'); speaking = false; };
+      utter.onerror = () => { triggerEl.classList.remove('speaking'); speaking = false; };
+    }
+
+    speaking = true;
+    showToast('🔊 ' + text);
+    window.speechSynthesis.speak(utter);
+  }
+
+  /* ── Repeat ── */
+  document.getElementById('repeatBtn').addEventListener('click', () => {
+    if (lastText) speak(lastText, null);
+  });
+  document.getElementById('repeatBtn').addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.key === ' ') && lastText) speak(lastText, null);
+  });
+
+  /* ── Toast ── */
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3800);
+  }
+
+  /* ── Load voices async (needed in Chrome) ── */
+  if (window.speechSynthesis) {
+    window.speechSynthesis.getVoices(); // warm up
+    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+  }
+
+  /* ── Keyboard: Enter/Space fires buttons ── */
+  document.querySelectorAll('.big-btn, .emerg-strip').forEach(el => {
+    el.setAttribute('tabindex', '0');
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); }
+    });
+  });
+</script>
+</body>
+</html>
